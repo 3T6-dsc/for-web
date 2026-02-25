@@ -226,7 +226,11 @@ export function TextChannel(props: ChannelPageProps) {
               class: sidebar(),
             }}
             style={{
-              width: sidebarState().state !== "default" ? "360px" : "",
+              width:
+                sidebarState().state !== "default" ||
+                props.channel.type === "DirectMessage"
+                  ? "360px"
+                  : "",
             }}
           >
             <Switch

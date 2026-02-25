@@ -13,7 +13,7 @@ export const ProfileCard = styled("div", {
     color: "var(--md-sys-color-on-surface)",
     background: "var(--md-sys-color-surface-container-low)",
 
-    padding: "var(--gap-lg)",
+    padding: "var(--gap-md)",
     borderRadius: "var(--borderRadius-lg)",
 
     display: "flex",

@@ -66,7 +66,7 @@ export function ProfileActions(props: {
         </Button>
       </Show>
       <Show when={props.user.relationship === "Friend"}>
-        <Button onPress={openDm}>Message</Button>
+        <Button onPress={() => props.user.blockUser()}>Block</Button>
       </Show>
 
       <Show

@@ -1,7 +1,17 @@
-import { Match, Show, Switch, createEffect, createMemo, on } from "solid-js";
+import {
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup,
+} from "solid-js";
 
 import { useLingui } from "@lingui-solid/solid/macro";
 import { VirtualContainer } from "@minht11/solid-virtual-container";
+import { useQuery } from "@tanstack/solid-query";
 import { Channel, ServerMember, User } from "stoat.js";
 import { styled } from "styled-system/jsx";
 
@@ -14,6 +24,7 @@ import {
   Deferred,
   MenuButton,
   OverflowingText,
+  Profile,
   Row,
   Tooltip,
   UserStatus,
@@ -39,6 +50,9 @@ interface Props {
 export function MemberSidebar(props: Props) {
   return (
     <Switch>
+      <Match when={props.channel.type === "DirectMessage"}>
+        <DirectMessageSidebar channel={props.channel} />
+      </Match>
       <Match when={props.channel.type === "Group"}>
         <GroupMemberSidebar
           channel={props.channel}
@@ -52,6 +66,57 @@ export function MemberSidebar(props: Props) {
         />
       </Match>
     </Switch>
+  );
+}
+
+export function DirectMessageSidebar(props: { channel: Channel }) {
+  const recipient = () => props.channel.recipient;
+
+  const [compact, setCompact] = createSignal(false);
+
+  createEffect(() => {
+    const mq = window.matchMedia("(max-width: 520px)");
+    const update = () => setCompact(mq.matches);
+
+    update();
+    mq.addEventListener("change", update);
+    onCleanup(() => mq.removeEventListener("change", update));
+  });
+
+  const profile = useQuery(() => ({
+    queryKey: ["profile", recipient()?.id],
+    queryFn: () => recipient()!.fetchProfile(),
+    enabled: !!recipient(),
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  }));
+
+  return (
+    <DMContainer>
+      <Show when={recipient()}>
+        <DMGrid
+          style={{
+            "grid-template-columns": compact() ? "1fr" : "repeat(3, 1fr)",
+          }}
+        >
+          <Profile.Banner
+            width={3}
+            user={recipient()!}
+            bannerUrl={profile.data?.animatedBannerURL}
+          />
+          <Profile.Actions user={recipient()!} width={3} />
+          <Profile.Status user={recipient()!} width={compact() ? 1 : 1} />
+          <Profile.Badges user={recipient()!} width={compact() ? 1 : 1} />
+          <Profile.Joined user={recipient()!} width={compact() ? 1 : 1} />
+          <Profile.Mutuals user={recipient()!} width={compact() ? 1 : 1} />
+          <Profile.Bio
+            content={profile.data?.content}
+            full
+            width={compact() ? 1 : 1}
+          />
+        </DMGrid>
+      </Show>
+    </DMContainer>
   );
 }
 
@@ -327,6 +392,31 @@ const Container = styled("div", {
   base: {
     paddingRight: "var(--gap-md)",
     width: "var(--layout-width-channel-sidebar)",
+  },
+});
+
+const DMContainer = styled("div", {
+  base: {
+    display: "flex",
+    flexDirection: "column",
+    height: "100%",
+    padding: "var(--gap-md)",
+    paddingRight: "var(--gap-md)",
+    width: "100%",
+    maxWidth: "360px",
+    minWidth: 0,
+    background: "var(--md-sys-color-surface-container-high)",
+    borderRadius: "var(--borderRadius-lg)",
+  },
+});
+
+const DMGrid = styled("div", {
+  base: {
+    display: "grid",
+    gap: "var(--gap-sm)",
+    padding: "var(--gap-sm)",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    minWidth: 0,
   },
 });
 
